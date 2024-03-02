@@ -1,0 +1,44 @@
+
+# Createing Autoscaling Group
+aws autoscaling create-auto-scaling-group --auto-scaling-group-name Artash-asg --min-size 1 --max-size 3 --desired-capacity 1 --launch-template LaunchTemplateName=Artash-launch-template
+
+# Createing LoadBalancer 
+aws elbv2 create-load-balancer --name Artash_LB --type application --subnets subnet-03d6c24170a8b8dc1 subnet-0e7d2aee4619a71ec
+
+#Createing TargetGroup 
+aws elbv2 create-target-group --name Artash-TG --protocol HTTP --port 80 --vpc-id vpc-0799504f6df9624a0
+
+
+# binding  AutoScallingGroup to  LoadBalancer
+aws autoscaling attach-load-balancer-target-groups --auto-scaling-group-name Artash-asg --target-group-arns arn:aws:elasticloadbalancing:us-east-1:730335231758:targetgroup/Artash-TG/9ee8ab99180737c7
+
+# Createing RDS MySQL 
+aws rds create-db-instance --db-instance-identifier Artash-rds --db-instance-class db.t2.micro --engine MySQL --master-username root --master-user-password pass1234 --allocated-storage 20 --vpc-security-group-ids sg-06429a4fb4579127c --db-subnet-group-name Default-vpc-0799504f6df9624a0 --no-publicly-accessible
+
+# Createing S3 Bucket
+aws s3api create-bucket --bucket artashbucket
+aws s3api put-bucket-versioning --bucket artashbucket --versioning-configuration Status=Enabled
+
+# input to 
+echo >> test.txt "Hello AWS"
+aws s3 cp test.txt s3://artashbucket/
+echo >> test.txt "Hello AWS new file "
+aws s3 cp test.txt s3://artashbucket/
+aws s3api get-bucket-versioning --bucket artashbucket
+
+
+#delete Template 
+aws ec2 delete-launch-template --launch-template-id lt-0dbf411e7a8671802 --region us-east-1
+#delete s3 Bucket
+aws s3 rm s3://artashbucket --recursive
+
+aws s3 rb s3://artashbucket --force
+#delete RDS
+aws rds delete-db-instance --db-instance-identifier Artash-rds --skip-final-snapshot
+aws autoscaling delete-auto-scaling-group --auto-scaling-group-name Artash-asg --force-delete
+aws ec2 describe-security-groups --query 'SecurityGroups[*].[GroupId, GroupName]'
+aws ec2 delete-security-group --group-id  sg-06429a4fb4579127c  
+aws ec2 delete-key-pair --key-name Artash_key
+
+
+
